@@ -11,8 +11,8 @@ import java.io.IOException;
 
 public class NodeUI extends GridPane {
 
-    private NodeUIController uiController;
     final private MainUIController mainUIController;
+    private NodeUIController uiController;
     private AStar astar;
 
     public NodeUI(MainUIController mainUIController) {
@@ -24,7 +24,7 @@ public class NodeUI extends GridPane {
             uiController = loader.getController();
             uiController.setRoot(this);
 
-            this.addEventHandler(MouseEvent.DRAG_DETECTED, e ->  {
+            this.addEventHandler(MouseEvent.DRAG_DETECTED, e -> {
                 e.consume();
                 uiController.getRoot().startFullDrag();
             });

@@ -5,7 +5,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
-import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleButton;
@@ -52,7 +51,6 @@ public class MainUIController {
 
 
     public MainUIController() {
-
         this.gridSize = DEFAULT_GRID_SIZE;
         this.setBlock = false;
         this.setStart = false;
@@ -159,7 +157,7 @@ public class MainUIController {
             astar.getOpenList().forEach(n -> {
                 NodeUIController nodeUI = getNodeUI(n.getPos()).getUiController();
 
-                if(!n.getPos().equals(astar.getTo().getPos()) && !n.getPos().equals(astar.getFrom().getPos())){
+                if (!n.getPos().equals(astar.getTo().getPos()) && !n.getPos().equals(astar.getFrom().getPos())) {
                     nodeUI.setNodeOpen();
                     nodeUI.setFCost(String.valueOf(n.getFCost()));
                     nodeUI.setGCost(String.valueOf(n.getGCost()));
@@ -169,7 +167,7 @@ public class MainUIController {
 
             astar.getClosedSet().forEach(n -> {
 
-                if(!n.getPos().equals(astar.getTo().getPos()) && !n.getPos().equals(astar.getFrom().getPos())){
+                if (!n.getPos().equals(astar.getTo().getPos()) && !n.getPos().equals(astar.getFrom().getPos())) {
                     NodeUIController nodeUI = getNodeUI(n.getPos()).getUiController();
                     nodeUI.setNodeClosed();
                 }
@@ -184,7 +182,6 @@ public class MainUIController {
             getNodeUI(astar.getFrom().getPos()).getUiController().setAsStart();
             getNodeUI(astar.getTo().getPos()).getUiController().setAsDestination();
         });
-
 
 
     }
@@ -249,12 +246,10 @@ public class MainUIController {
     @FXML
     public void onShowCosts() {
         final boolean show = chkboxShowCosts.isSelected();
-        new Thread(() -> {
-            astarGridPane.getChildren().forEach(n -> {
-                NodeUIController nodeUIController = ((NodeUI) n).getUiController();
-                nodeUIController.showCosts(show);
-            });
-        }).start();
+        new Thread(() -> astarGridPane.getChildren().forEach(n -> {
+            NodeUIController nodeUIController = ((NodeUI) n).getUiController();
+            nodeUIController.showCosts(show);
+        })).start();
     }
 
     @FXML
@@ -264,7 +259,7 @@ public class MainUIController {
         astar.getOpenList().clear();
         astar.getPath().clear();
         astarGridPane.getChildren().forEach(n -> {
-            NodeUIController nodeUIController = ((NodeUI)n).getUiController();
+            NodeUIController nodeUIController = ((NodeUI) n).getUiController();
             nodeUIController.setHCost("");
             nodeUIController.setFCost("");
             nodeUIController.setGCost("");
