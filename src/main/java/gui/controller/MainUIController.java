@@ -25,9 +25,16 @@ import java.util.concurrent.TimeUnit;
 //TODO add stop
 //TODO adjust colors
 //TODO add readjust grid size
+//TODO fix set block on start/destination
+//TODO fix togglebutton unselect when edit grid
+//TODO enable/disable diagonal
+//TODO fix show costs (size 50)
+//TODO fix java.util.ConcurrentModificationException on calcPath
+//TODO set title
+//TODO set icon
 
 public class MainUIController {
-    final private int DEFAULT_GRID_SIZE = 20;
+    final private int DEFAULT_GRID_SIZE = 50;
     private AStar astar;
     @FXML
     private AnchorPane rootPane;

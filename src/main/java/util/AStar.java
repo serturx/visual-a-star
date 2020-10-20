@@ -165,6 +165,8 @@ public class AStar {
 
         if (found) {
             setFinalPathStatus();
+        } else {
+            System.out.println("\n No Path Found!");
         }
     }
 
@@ -205,15 +207,17 @@ public class AStar {
 
         if (current != null) {
             path.add(current);
-            backTracePath(current.getPrevious());
-
+            uiController.updateAstarGridPath();
             try {
-                Thread.sleep((long) uiController.getUpdateRate() / 2);
+                Thread.sleep((long) uiController.getUpdateRate());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            backTracePath(current.getPrevious());
 
-            uiController.updateAstarGridPath();
+
+
+
 
         }
     }
