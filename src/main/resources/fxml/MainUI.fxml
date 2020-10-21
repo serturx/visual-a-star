@@ -22,7 +22,7 @@
                </opaqueInsets>
             </ToggleButton>
             <Label text="Update Rate (ms):" />
-            <Slider fx:id="sldrSpeed" majorTickUnit="50.0" max="200.0" prefHeight="33.0" prefWidth="145.0" showTickLabels="true" />
+            <Slider fx:id="sldrSpeed" blockIncrement="5.0" majorTickUnit="50.0" prefHeight="33.0" prefWidth="186.0" showTickLabels="true" />
             <Button mnemonicParsing="false" onAction="#onCalcPath" text="Calculate Path" />
             <Button mnemonicParsing="false" onAction="#onReset" text="Reset Grid/Stop" />
             <Button mnemonicParsing="false" onAction="#onPausePlay" text="Pause/Play" />

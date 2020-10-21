@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 //TODO enable/disable diagonal
 //TODO set icon
 //TODO multithread grid render
+//TODO fix drag start/dest over block
 
 public class MainUIController {
     final private int DEFAULT_GRID_SIZE = 30;

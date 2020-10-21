@@ -34,7 +34,7 @@ public class NodeUIController {
         setHCost("");
         setFCost("");
         showCosts(false);
-        //container.setStyle("-fx-border-color: #535c68;");
+        container.setStyle("-fx-border-color: rgba(99, 110, 114, 0.2);");
         setColor(DEF_COLOR);
     }
 
