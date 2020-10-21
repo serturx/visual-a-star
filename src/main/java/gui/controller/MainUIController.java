@@ -22,11 +22,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 
-//TODO adjust colors
 //TODO allow rectangle
 //TODO enable/disable diagonal
-//TODO set title
 //TODO set icon
+//TODO multithread grid render
 
 public class MainUIController {
     final private int DEFAULT_GRID_SIZE = 30;
@@ -89,10 +88,6 @@ public class MainUIController {
 
         System.out.println("Setting up: Grid Nodes");
         astarGrid.getChildren().addAll(createGridNodes(totalNodeAmount));
-        astarGrid.getChildren().forEach(n -> {
-            NodeUI nodeUI = (NodeUI) n;
-            nodeUI.getUiController().setColor(Color.WHITE);
-        });
 
         //constraints set, so that each row and column is of the same width and height
         ColumnConstraints cc = new ColumnConstraints();
@@ -197,11 +192,24 @@ public class MainUIController {
      */
 
     public void updateAstarGridPath() {
-        Platform.runLater(() -> {
-            astar.getPath().forEach(n -> getNodeUI(n.getPos()).getUiController().setPath());
-            getNodeUI(astar.getFrom().getPos()).getUiController().setAsStart();
-            getNodeUI(astar.getTo().getPos()).getUiController().setAsDestination();
-        });
+        new Thread(() -> {
+            astar.getPath().forEach(n -> {
+
+                Platform.runLater(() -> getNodeUI(n.getPos()).getUiController().setPath());
+
+                try {
+                    Thread.sleep((long) getUpdateRate());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            });
+
+            Platform.runLater(() -> {
+                getNodeUI(astar.getFrom().getPos()).getUiController().setAsStart();
+                getNodeUI(astar.getTo().getPos()).getUiController().setAsDestination();
+            });
+        }).start();
+
 
 
     }
@@ -241,17 +249,22 @@ public class MainUIController {
     @FXML
     private void onSetDestination() {
         setDestination = !setDestination;
-
+        setStart = false;
+        setBlock = false;
     }
 
     @FXML
     private void onSetStart() {
         setStart = !setStart;
+        setDestination = false;
+        setBlock = false;
     }
 
     @FXML
     public void onSetBlock() {
         setBlock = !setBlock;
+        setStart = false;
+        setDestination = false;
     }
 
     @FXML

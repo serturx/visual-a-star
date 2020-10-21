@@ -96,8 +96,13 @@ public class AStar {
         this.to = grid[to.getY()][to.getX()];
         this.path = new ArrayList<>();
         this.openList =
-                new PriorityBlockingQueue<>(1,
-                        Comparator.comparingInt(AstarNode::getFCost));
+                new PriorityBlockingQueue<>(1, (o1, o2) -> {
+                    if(o1.getFCost() == o2.getFCost()) {
+                        return  o1.getHCost() - o2.getHCost();
+                    }
+
+                    return o1.getFCost() - o2.getFCost();
+        });
 
         this.closedSet = ConcurrentHashMap.newKeySet();
         this.trackSteps = false;
@@ -114,7 +119,7 @@ public class AStar {
      * @param to         Destionation node coordinates
      * @param trackSteps Whether to track steps
      */
-    public AStar(int size, Vector2 from, Vector2 to, boolean trackSteps, MainUIController uiController, CountDownLatch cdl) {
+    public AStar(int size, Vector2 from, Vector2 to, boolean trackSteps, MainUIController uiController) {
         this(size, from, to, uiController);
         this.trackSteps = trackSteps;
         this.steps = new ArrayList<>();

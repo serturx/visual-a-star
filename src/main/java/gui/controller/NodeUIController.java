@@ -26,21 +26,24 @@ public class NodeUIController {
 
     private NodeUI root;
 
+    final private Color DEF_COLOR = Color.rgb(112, 111, 211);
+
     @FXML
     public void initialize() {
         setGCost("");
         setHCost("");
         setFCost("");
         showCosts(false);
-        container.setStyle("-fx-border-color: rgba(88,88,88,0.5)");
+        //container.setStyle("-fx-border-color: #535c68;");
+        setColor(DEF_COLOR);
     }
 
     public void setNodeClosed() {
-        setColor(Color.rgb(219, 86, 86));
+        setColor(Color.rgb(44, 44, 84));
     }
 
     public void setNodeOpen() {
-        setColor(Color.rgb(123, 208, 147));
+        setColor(Color.rgb(82, 82, 160));
     }
 
     public void showCosts(boolean show) {
@@ -96,20 +99,20 @@ public class NodeUIController {
     }
 
     public void setAsStart() {
-        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getFrom().getPos()).getUiController().setColor(Color.WHITE);
+        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getFrom().getPos()).getUiController().setColor(DEF_COLOR);
         root.getMainUIController().getAstar().setFrom(getPos());
-        setColor(Color.rgb(0, 255, 0));
+        setColor(Color.rgb(46, 204, 113));
     }
 
     public void setAsDestination() {
-        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getTo().getPos()).getUiController().setColor(Color.WHITE);
+        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getTo().getPos()).getUiController().setColor(DEF_COLOR);
         root.getMainUIController().getAstar().setTo(getPos());
-        setColor(Color.rgb(255, 0, 0));
+        setColor(Color.rgb(231, 76, 60));
     }
 
     public void removeBlockNode() {
         root.getMainUIController().setBlockUI(root, false);
-        setColor(Color.WHITE);
+        setColor(DEF_COLOR);
     }
 
 
@@ -117,7 +120,7 @@ public class NodeUIController {
         if (!root.getMainUIController().getAstar().getFrom().getPos().equals(getPos()) &&
                 !root.getMainUIController().getAstar().getTo().getPos().equals(getPos())) {
             root.getMainUIController().setBlockUI(root, true);
-            setColor(Color.BLACK);
+            setColor(Color.rgb(52, 73, 94));
         }
 
     }
@@ -127,7 +130,7 @@ public class NodeUIController {
     }
 
     public void setPath() {
-        setColor(Color.ORANGE);
+        setColor(Color.rgb(9, 132, 227));
     }
 
     public void setColor(Color fill) {
@@ -157,4 +160,7 @@ public class NodeUIController {
         lblFCost.setText(value);
     }
 
+    public Color getDEF_COLOR() {
+        return DEF_COLOR;
+    }
 }
