@@ -5,9 +5,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Slider;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import model.AstarNode;
@@ -16,25 +14,22 @@ import util.AStar;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-//TODO add pause play
-//TODO add stop
+
 //TODO adjust colors
-//TODO add readjust grid size
-//TODO fix set block on start/destination
-//TODO fix togglebutton unselect when edit grid
+//TODO allow rectangle
 //TODO enable/disable diagonal
-//TODO fix show costs (size 50)
-//TODO fix java.util.ConcurrentModificationException on calcPath
 //TODO set title
 //TODO set icon
 
 public class MainUIController {
-    final private int DEFAULT_GRID_SIZE = 50;
+    final private int DEFAULT_GRID_SIZE = 30;
     private AStar astar;
     @FXML
     private AnchorPane rootPane;
@@ -43,9 +38,13 @@ public class MainUIController {
     @FXML
     private ToggleButton btnSetDestination;
     @FXML
+    private ToggleButton btnEditBlocks;
+    @FXML
     private Slider sldrSpeed;
     @FXML
     private CheckBox chkboxShowCosts;
+    @FXML
+    private Spinner spnrGridSize;
 
     //need to reduce memory usage, takes god damn 2GB when gridsize is 100
     //probably need to use tableview or something idk
@@ -55,6 +54,9 @@ public class MainUIController {
     private boolean setStart;
     private boolean setDestination;
     private boolean setBlock;
+    private Thread astarThread;
+    private boolean astarThreadSleeping;
+    private CountDownLatch astarWaitForPlay;
 
 
     public MainUIController() {
@@ -66,6 +68,11 @@ public class MainUIController {
 
     @FXML
     public void initialize() {
+        spnrGridSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 100));
+        ToggleGroup group = new ToggleGroup();
+        btnSetStart.setToggleGroup(group);
+        btnSetDestination.setToggleGroup(group);
+        btnEditBlocks.setToggleGroup(group);
         setGridSize(gridSize);
     }
 
@@ -116,11 +123,9 @@ public class MainUIController {
         }
 
         //astarGrid.setGridLinesVisible(true);
-
-
         System.out.printf("Total amount of Nodes: %d", astarGrid.getChildren().size());
 
-        //grid "anchored" to the origin as it needs to be stretched properly when the windows gets resized
+        //grid "anchored" to the origin as the grid needs to be stretched properly when the windows gets resized
         AnchorPane.setTopAnchor(astarGrid, 0d);
         AnchorPane.setLeftAnchor(astarGrid, 0d);
         AnchorPane.setRightAnchor(astarGrid, 0d);
@@ -131,8 +136,8 @@ public class MainUIController {
     private void initGrid(GridPane grid) {
         grid.maxHeight(Double.POSITIVE_INFINITY);
         grid.maxWidth(Double.POSITIVE_INFINITY);
-        grid.minHeight(0);
-        grid.minWidth(0);
+        grid.minHeight(200);
+        grid.minWidth(200);
     }
 
     private List<NodeUI> createGridNodes(int amount) {
@@ -172,16 +177,24 @@ public class MainUIController {
                 }
             });
 
-            astar.getClosedSet().forEach(n -> {
+
+            new HashSet<>(astar.getClosedSet()).forEach(n -> {
 
                 if (!n.getPos().equals(astar.getTo().getPos()) && !n.getPos().equals(astar.getFrom().getPos())) {
                     NodeUIController nodeUI = getNodeUI(n.getPos()).getUiController();
                     nodeUI.setNodeClosed();
+                    nodeUI.setFCost(String.valueOf(n.getFCost()));
+                    nodeUI.setGCost(String.valueOf(n.getGCost()));
+                    nodeUI.setHCost(String.valueOf(n.getHCost()));
                 }
             });
         });
 
     }
+
+    /**
+     * Updates the UI Grid based on the astar Grid //TODO Optimize
+     */
 
     public void updateAstarGridPath() {
         Platform.runLater(() -> {
@@ -202,33 +215,37 @@ public class MainUIController {
 
     }
 
+    /**
+     * Sets/Removes a block on the specified UI node
+     *
+     * @param node  node to set
+     * @param block whether to set a block
+     */
     public void setBlockUI(NodeUI node, boolean block) {
         try {
             astar.setBlock(new Vector2(GridPane.getColumnIndex(node), GridPane.getRowIndex(node)), block);
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
 
     }
 
     @FXML
     private void onCalcPath() {
+        if (astarRunning) return;
+        astarThreadSleeping = false;
         astarRunning = true;
-        new Thread(astar::calcPath).start();
+        astarThread = new Thread(astar::calcPath);
+        astarThread.start();
+
     }
 
     @FXML
     private void onSetDestination() {
-        btnSetStart.setSelected(false);
-        setStart = false;
         setDestination = !setDestination;
 
     }
 
     @FXML
     private void onSetStart() {
-
-        btnSetDestination.setSelected(false);
-        setDestination = false;
         setStart = !setStart;
     }
 
@@ -238,15 +255,9 @@ public class MainUIController {
     }
 
     @FXML
-    public void onRemoveAllBlocks() {
-        astarGridPane.getChildren().forEach((node -> {
-            NodeUI nodeUI = (NodeUI) node;
-            nodeUI.getUiController().removeBlockNode();
-        }));
-    }
-
-    @FXML
     public void onPrintGrid() {
+
+        astar.updateNodeCostStatus();
         System.out.println(astar.toString());
     }
 
@@ -261,19 +272,46 @@ public class MainUIController {
 
     @FXML
     public void onReset() {
-        onRemoveAllBlocks();
-        astar.getClosedSet().clear();
-        astar.getOpenList().clear();
-        astar.getPath().clear();
-        astarGridPane.getChildren().forEach(n -> {
-            NodeUIController nodeUIController = ((NodeUI) n).getUiController();
-            nodeUIController.setHCost("");
-            nodeUIController.setFCost("");
-            nodeUIController.setGCost("");
-        });
+        if (!astar.getClosedSet().isEmpty()) {
+            astarThread = null;
+            astarRunning = false;
+            astarThreadSleeping = false;
+            this.astar = new AStar(gridSize, new Vector2(0, 0), new Vector2(1, 1), this);
 
-        astarRunning = false; //TODO set automatically
+            astarGridPane.getChildren().forEach((node -> {
+                NodeUI nodeUI = (NodeUI) node;
+                nodeUI.getUiController().removeBlockNode();
+            }));
 
+            astarGridPane.getChildren().forEach(n -> {
+                NodeUIController nodeUIController = ((NodeUI) n).getUiController();
+                nodeUIController.setHCost("");
+                nodeUIController.setFCost("");
+                nodeUIController.setGCost("");
+            });
+
+
+        }
+    }
+
+    @FXML
+    public void onPausePlay() {
+        if (astarRunning) {
+            if (astarThreadSleeping) {
+                astarWaitForPlay.countDown();
+                astarThreadSleeping = false;
+            } else {
+                astarWaitForPlay = new CountDownLatch(1);
+                astar.setWaiting(astarWaitForPlay);
+                astarThreadSleeping = true;
+            }
+        }
+    }
+
+    @FXML
+    public void onApplyGridSize() {
+        onReset();
+        setGridSize((Integer) spnrGridSize.getValue());
     }
 
     public boolean isAstarRunning() {
@@ -327,6 +365,12 @@ public class MainUIController {
     public double getUpdateRate() {
         return sldrSpeed.getValue();
     }
+
+    public void calcPathFinished() {
+        this.astarRunning = false;
+    }
+
+
 
 
 }

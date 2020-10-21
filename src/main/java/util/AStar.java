@@ -5,6 +5,9 @@ import model.AstarNode;
 import model.Vector2;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.PriorityBlockingQueue;
 
 /**
  * This clas is an implementation of the A* Algorithm which is an extension of the Dijkstra Algorithm. A* finds the
@@ -27,7 +30,7 @@ public class AStar {
     /**
      * List with all found nodes, the one with the lowest f cost is at the top
      */
-    private final PriorityQueue<AstarNode> openList;
+    private final PriorityBlockingQueue<AstarNode> openList;
     /**
      * All closed nodes (closed meaning all it's neighbours have been added)
      */
@@ -61,7 +64,9 @@ public class AStar {
      */
     private ArrayList<String> steps;
 
-    private MainUIController uiController;
+    private final MainUIController uiController;
+
+    private CountDownLatch waiting;
 
     /**
      * AStar Constructor
@@ -91,10 +96,10 @@ public class AStar {
         this.to = grid[to.getY()][to.getX()];
         this.path = new ArrayList<>();
         this.openList =
-                new PriorityQueue<>(
+                new PriorityBlockingQueue<>(1,
                         Comparator.comparingInt(AstarNode::getFCost));
 
-        this.closedSet = new HashSet<>();
+        this.closedSet = ConcurrentHashMap.newKeySet();
         this.trackSteps = false;
         this.totalCost = Integer.MAX_VALUE;
         this.uiController = uiController;
@@ -109,7 +114,7 @@ public class AStar {
      * @param to         Destionation node coordinates
      * @param trackSteps Whether to track steps
      */
-    public AStar(int size, Vector2 from, Vector2 to, boolean trackSteps, MainUIController uiController) {
+    public AStar(int size, Vector2 from, Vector2 to, boolean trackSteps, MainUIController uiController, CountDownLatch cdl) {
         this(size, from, to, uiController);
         this.trackSteps = trackSteps;
         this.steps = new ArrayList<>();
@@ -133,8 +138,6 @@ public class AStar {
             if (trackSteps) {
                 updateNodeCostStatus();
             }
-
-            uiController.updateAstarGrid();
 
             // takes the node with the lower f Cost
             AstarNode current = openList.poll();
@@ -160,12 +163,22 @@ public class AStar {
                     e.printStackTrace();
                 }
 
+                uiController.updateAstarGrid();
+
+                if(waiting != null) {
+                    try {
+                        waiting.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
 
         if (found) {
             setFinalPathStatus();
-        } else {
+            uiController.updateAstarGridPath();
+        } else if(uiController.isAstarRunning()){
             System.out.println("\n No Path Found!");
         }
     }
@@ -207,18 +220,7 @@ public class AStar {
 
         if (current != null) {
             path.add(current);
-            uiController.updateAstarGridPath();
-            try {
-                Thread.sleep((long) uiController.getUpdateRate());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             backTracePath(current.getPrevious());
-
-
-
-
-
         }
     }
 
@@ -239,11 +241,6 @@ public class AStar {
                 neighbour.calcAllCosts(to, cost);
                 if (!openList.contains(neighbour)) {
                     openList.add(neighbour);
-                } else {
-                    // Re-add the changed node, as PriorityQueue only checks the value when added to
-                    // the Queue
-                    closedSet.remove(neighbour);
-                    closedSet.add(neighbour);
                 }
             }
         }
@@ -278,14 +275,14 @@ public class AStar {
     /**
      * Updates all status on found nodes, shows their cost if they haven't been closed yet and adds it to the steps list
      */
-    private void updateNodeCostStatus() {
-        closedSet.forEach(astarNode -> astarNode.setStatus("CL"));
+    public void updateNodeCostStatus() {
+        closedSet.forEach(astarNode -> astarNode.setStatus(String.valueOf(astarNode.getFCost())));
 
         openList.forEach(astarNode -> astarNode.setStatus(String.valueOf(astarNode.getFCost())));
 
         setStartDestStatus();
 
-        steps.add(this.toString());
+        if(trackSteps) steps.add(this.toString());
 
     }
 
@@ -454,7 +451,7 @@ public class AStar {
         return grid[coordinates.getY()][coordinates.getX()];
     }
 
-    public PriorityQueue<AstarNode> getOpenList() {
+    public PriorityBlockingQueue<AstarNode> getOpenList() {
         return openList;
     }
 
@@ -468,5 +465,13 @@ public class AStar {
 
     public ArrayList<AstarNode> getPath() {
         return path;
+    }
+
+    public CountDownLatch getWaiting() {
+        return waiting;
+    }
+
+    public void setWaiting(CountDownLatch waiting) {
+        this.waiting = waiting;
     }
 }

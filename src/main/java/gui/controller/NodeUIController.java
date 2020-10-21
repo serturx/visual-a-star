@@ -58,24 +58,25 @@ public class NodeUIController {
     @FXML
     public void onClick(MouseEvent e) {
 
-        if (root.getMainUIController().isSetStart()) {
+        if(!root.getMainUIController().isAstarRunning()) {
+            if (root.getMainUIController().isSetStart()) {
 
-            setAsStart();
+                setAsStart();
 
-        } else if (root.getMainUIController().isSetDestination()) {
+            } else if (root.getMainUIController().isSetDestination()) {
 
-            setAsDestination();
+                setAsDestination();
 
-        } else if (!root.getMainUIController().isAstarRunning() && root.getMainUIController().isSetBlocks()) {
-            if (e.getButton() == MouseButton.PRIMARY) {
+            } else if (root.getMainUIController().isSetBlocks()) {
+                if (e.getButton() == MouseButton.PRIMARY) {
 
-                setBlockNode();
+                    setBlockNode();
 
-            } else if (e.getButton() == MouseButton.SECONDARY) {
+                } else if (e.getButton() == MouseButton.SECONDARY) {
 
-                removeBlockNode();
-            }
-        } else {
+                    removeBlockNode();
+                }
+            } else {
             /*Stage stage = new Stage();
             stage.initModality(Modality.WINDOW_MODAL);
 
@@ -86,20 +87,23 @@ public class NodeUIController {
             Scene scene = new Scene(hBox);
             stage.setScene(scene);
             stage.show();*/
+            }
         }
+
+
 
 
     }
 
     public void setAsStart() {
         root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getFrom().getPos()).getUiController().setColor(Color.WHITE);
-        root.getMainUIController().getAstar().setFrom(new Vector2(GridPane.getColumnIndex(root), GridPane.getRowIndex(root)));
+        root.getMainUIController().getAstar().setFrom(getPos());
         setColor(Color.rgb(0, 255, 0));
     }
 
     public void setAsDestination() {
         root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getTo().getPos()).getUiController().setColor(Color.WHITE);
-        root.getMainUIController().getAstar().setTo(new Vector2(GridPane.getColumnIndex(root), GridPane.getRowIndex(root)));
+        root.getMainUIController().getAstar().setTo(getPos());
         setColor(Color.rgb(255, 0, 0));
     }
 
@@ -110,13 +114,19 @@ public class NodeUIController {
 
 
     public void setBlockNode() {
-        root.getMainUIController().setBlockUI(root, true);
-        setColor(Color.BLACK);
+        if (!root.getMainUIController().getAstar().getFrom().getPos().equals(getPos()) &&
+                !root.getMainUIController().getAstar().getTo().getPos().equals(getPos())) {
+            root.getMainUIController().setBlockUI(root, true);
+            setColor(Color.BLACK);
+        }
 
     }
 
+    public Vector2 getPos() {
+        return new Vector2(GridPane.getColumnIndex(root), GridPane.getRowIndex(root));
+    }
+
     public void setPath() {
-        System.out.println("is path");
         setColor(Color.ORANGE);
     }
 
