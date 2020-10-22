@@ -72,22 +72,23 @@ public class AStar {
     /**
      * AStar Constructor
      *
-     * @param size Size of the grid
+     * @param width      Width of the grid
+     * @param height     Height of the grid
      * @param from Starting node coordinates
      * @param to   Destination node coordinates
      */
-    public AStar(int size, Vector2 from, Vector2 to, MainUIController uiController) {
+    public AStar(int height, int width, Vector2 from, Vector2 to, MainUIController uiController) {
 
         // Checks whether the given coordinates are in the grid
-        if (!from.allInRange(0, size) || !to.allInRange(0, size)) {
+        /*if (!from.allInRange(0, height) || !to.allInRange(0, height)) { //TODO change to check height and width
             throw new IllegalArgumentException("Start or Destination Node out of Bounds");
-        }
+        }*/
 
-        this.grid = new AstarNode[size][size];
+        this.grid = new AstarNode[height][width];
 
         // Fills the array with nodes
         for (int i = 0; i < this.grid.length; i++) {
-            for (int j = 0; j < this.grid.length; j++) {
+            for (int j = 0; j < this.grid[0].length; j++) {
                 this.grid[i][j] = new AstarNode(new Vector2(j, i));
             }
         }
@@ -108,13 +109,14 @@ public class AStar {
     /**
      * Additional Constructor if steps should be tracked
      *
-     * @param size       Size of the grid
+     * @param width      Width of the grid
+     * @param height     Height of the grid
      * @param from       Starting node coordinates
      * @param to         Destionation node coordinates
      * @param trackSteps Whether to track steps
      */
-    public AStar(int size, Vector2 from, Vector2 to, boolean trackSteps, MainUIController uiController) {
-        this(size, from, to, uiController);
+    public AStar(int height, int width, Vector2 from, Vector2 to, boolean trackSteps, MainUIController uiController) {
+        this(height, width, from, to, uiController);
         this.trackSteps = trackSteps;
         this.steps = new ArrayList<>();
     }
@@ -164,6 +166,7 @@ public class AStar {
                 totalCost = current.getFCost();
                 backTracePath(current);
                 break;
+
             } else {
                 // otherwise just add all neighbouring nodes to the open list
                 addNeighbours(current);
@@ -210,7 +213,7 @@ public class AStar {
                 }
 
                 for (int j = currentX - 1; j <= currentX + 1; j++) {
-                    if (j < 0 || j >= grid.length) {
+                    if (j < 0 || j >= grid[0].length) {
                         continue;
                     }
 
@@ -328,10 +331,6 @@ public class AStar {
 
     }
 
-    public void toggleBlock(Vector2 v) {
-        setBlock(v, !grid[v.getY()][v.getX()].isWalkable());
-    }
-
     /**
      * Sets a given amount of nodes impassable randomly
      *
@@ -364,11 +363,11 @@ public class AStar {
      */
     public void setBlocks(boolean[][] input) {
         if (input.length != grid.length || Arrays.stream(input).anyMatch(i -> i.length != grid.length)) {
-            throw new IllegalArgumentException(String.format("Input array must be size %dx%d", grid.length, grid.length));
+            throw new IllegalArgumentException(String.format("Input array must be size %dx%d", grid.length, grid[0].length));
         }
 
         for (int i = 0; i < input.length; i++) {
-            for (int j = 0; j < input.length; j++) {
+            for (int j = 0; j < input[0].length; j++) {
                 if (input[i][j]) {
                     setBlock(new Vector2(j, i), false);
                 }
@@ -389,7 +388,7 @@ public class AStar {
         StringBuilder sb = new StringBuilder();
 
         // Column indeces
-        for (int i = 0; i < grid.length; i++) {
+        for (int i = 0; i < grid[0].length; i++) {
             if (i == 0) {
                 sb.append("      00 ");
             } else {
@@ -403,7 +402,7 @@ public class AStar {
 
         sb.append("\n");
 
-        sb.append("-".repeat(grid.length * 3 + 5));
+        sb.append("-".repeat(grid[0].length * 3 + 5));
 
         sb.append("\n");
 
@@ -420,7 +419,7 @@ public class AStar {
             sb.append("\n");
         }
 
-        sb.append("-".repeat(grid.length * 3 + 5));
+        sb.append("-".repeat(grid[0].length * 3 + 5));
 
         return sb.toString();
     }

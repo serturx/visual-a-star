@@ -10,7 +10,7 @@
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="rootPane" prefHeight="43.0" prefWidth="1402.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controller.MainUIController">
+<AnchorPane fx:id="rootPane" prefHeight="43.0" prefWidth="1301.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.controller.MainUIController">
    <children>
       <ToolBar maxHeight="1.7976931348623157E308" prefHeight="43.0" prefWidth="883.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
         <items>
@@ -27,11 +27,12 @@
             <Button mnemonicParsing="false" onAction="#onReset" text="Reset Grid/Stop" />
             <Label text="Update Rate (ms):" />
             <Slider fx:id="sldrSpeed" blockIncrement="5.0" majorTickUnit="50.0" prefHeight="33.0" prefWidth="186.0" showTickLabels="true" />
-            <Label text="Grid Size" />
-            <Spinner fx:id="spnrGridSize" prefHeight="25.0" prefWidth="61.0" />
+            <Label text="Height" />
+            <Spinner fx:id="spnrGridHeight" prefHeight="25.0" prefWidth="61.0" />
+            <Label text="Width" />
+            <Spinner fx:id="spnrGridWidth" prefHeight="25.0" prefWidth="61.0" />
             <Button mnemonicParsing="false" onAction="#onApplyGridSize" text="Apply Size" />
             <CheckBox fx:id="chkboxAllowDiagonals" mnemonicParsing="false" selected="true" text="Allow Diagonals" />
-            <Button mnemonicParsing="false" onAction="#onPrintGrid" text="(Debug)" />
         </items>
       </ToolBar>
    </children>

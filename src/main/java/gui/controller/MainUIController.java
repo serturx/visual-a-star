@@ -20,14 +20,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-
-//TODO allow rectangle grid
-//TODO set icon
-//TODO multithread grid render
-
+//TODO more styling
 
 public class MainUIController {
-    final private int DEFAULT_GRID_SIZE = 30;
+    final private int DEF_GRID_HEIGHT = 90;
+    final private int DEF_GRID_WIDTH = 160;
     private AStar astar;
     @FXML
     private AnchorPane rootPane;
@@ -40,13 +37,14 @@ public class MainUIController {
     @FXML
     private Slider sldrSpeed;
     @FXML
-    private CheckBox chkboxShowCosts;
+    private Spinner spnrGridWidth;
     @FXML
-    private Spinner spnrGridSize;
+    private Spinner spnrGridHeight;
     @FXML
     private CheckBox chkboxAllowDiagonals;
 
-    private int gridSize;
+    private int gridWidth;
+    private int gridHeight;
     private GridPane astarGridPane;
     private boolean astarRunning;
     private boolean settingStart;
@@ -59,7 +57,8 @@ public class MainUIController {
     private boolean destinationSet;
 
     public MainUIController() {
-        this.gridSize = DEFAULT_GRID_SIZE;
+        this.gridHeight = DEF_GRID_HEIGHT;
+        this.gridWidth = DEF_GRID_WIDTH;
         this.settingBlock = false;
         this.settingStart = false;
         this.settingDestination = false;
@@ -67,24 +66,25 @@ public class MainUIController {
 
     @FXML
     public void initialize() {
-        spnrGridSize.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 200));
+        spnrGridHeight.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 200));
+        spnrGridWidth.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 200));
         ToggleGroup group = new ToggleGroup();
         btnSetStart.setToggleGroup(group);
         btnSetDestination.setToggleGroup(group);
         btnEditBlocks.setToggleGroup(group);
-        setGridSize(gridSize);
+        setGridSize(gridHeight, gridWidth);
     }
 
-    public void setGridSize(int size) {
-        this.astar = new AStar(size, new Vector2(0, 0), new Vector2(1, 1), this);
+    public void setGridSize(int height, int width) {
+        this.astar = new AStar(height, width, new Vector2(0, 0), new Vector2(1, 1), this);
         //remove the gridpane only to re-render it with the correct size
         rootPane.getChildren().removeIf(n -> n instanceof GridPane);
-        gridSize = size;
+        gridWidth = width;
+        gridHeight = height;
         GridPane astarGrid = new GridPane();
         astarGridPane = astarGrid;
         initGrid(astarGrid);
-        //as the grid is quadratic, the total amount of nodes is equal to size^2
-        int totalNodeAmount = (int) Math.pow(gridSize, 2);
+        int totalNodeAmount = height * width;
 
         System.out.println("Setting up: Grid Nodes");
         astarGrid.getChildren().addAll(createGridNodes(totalNodeAmount));
@@ -104,16 +104,19 @@ public class MainUIController {
 
         System.out.println("Setting up: Grid Constraints");
 
-        for (int i = 0; i < gridSize; i++) {
+        for (int i = 0; i < gridHeight; i++) {
             astarGrid.getRowConstraints().add(rc);
+        }
+
+        for(int i = 0; i < gridWidth; i++) {
             astarGrid.getColumnConstraints().add(cc);
         }
 
 
-        for (int i = 0; i < gridSize; i++) {
-            for (int j = 0; j < gridSize; j++) {
-                GridPane.setColumnIndex(astarGrid.getChildren().get(i * gridSize + j), j);
-                GridPane.setRowIndex(astarGrid.getChildren().get(i * gridSize + j), i);
+        for (int i = 0; i < gridHeight; i++) {
+            for (int j = 0; j < gridWidth; j++) {
+                GridPane.setColumnIndex(getNodeUI(new Vector2(j, i)), j);
+                GridPane.setRowIndex(getNodeUI(new Vector2(j, i)) , i);
             }
         }
 
@@ -142,7 +145,7 @@ public class MainUIController {
         final List<NodeUI> syncList = Collections.synchronizedList(new ArrayList<>(amount));
 
         for (int i = 0; i < amount; i++) {
-            if (i % gridSize == 0) System.out.printf("Setting up: Row %d\n", i / gridSize);
+            if (i % gridHeight == 0) System.out.printf("Setting up: Row %d\n", i / gridHeight);
             threadPool.execute(() -> {
                 NodeUI nodeUI = new NodeUI(this);
                 GridPane.setHalignment(nodeUI, HPos.CENTER);
@@ -276,7 +279,7 @@ public class MainUIController {
             astarThread = null;
             astarRunning = false;
             astarThreadSleeping = false;
-            this.astar = new AStar(gridSize, new Vector2(0, 0), new Vector2(1, 1), this);
+            this.astar = new AStar(gridHeight, gridWidth, new Vector2(0, 0), new Vector2(1, 1), this);
 
             astarGridPane.getChildren().forEach((node -> {
                 NodeUI nodeUI = (NodeUI) node;
@@ -302,7 +305,7 @@ public class MainUIController {
     @FXML
     public void onApplyGridSize() {
         onReset();
-        setGridSize((Integer) spnrGridSize.getValue());
+        setGridSize((Integer) spnrGridHeight.getValue(), (Integer) spnrGridWidth.getValue());
     }
 
     @FXML
@@ -363,7 +366,7 @@ public class MainUIController {
     }
 
     public NodeUI getNodeUI(Vector2 v) {
-        return (NodeUI) astarGridPane.getChildren().get(v.getY() * gridSize + v.getX());
+        return (NodeUI) astarGridPane.getChildren().get(v.getY() * gridWidth + v.getX());
     }
 
     public double getUpdateRate() {
