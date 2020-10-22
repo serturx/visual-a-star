@@ -5,6 +5,7 @@ import gui.controller.NodeUIController;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
+import model.AstarNode;
 import util.AStar;
 
 import java.io.IOException;

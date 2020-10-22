@@ -1,5 +1,7 @@
 package model;
 
+import util.AStar;
+
 /**
  * This class represents a node in graph specific for this implementation of the A* Algorithm
  */
@@ -78,7 +80,11 @@ public class AstarNode {
      * @param to Destination node
      */
     public void calcHCost(AstarNode to) {
-        hCost = (int) Math.sqrt(Math.pow(pos.getX() - to.getX(), 2) + Math.pow(pos.getY() - to.getY(), 2)) * 10;
+        int dx = Math.abs(this.getX() - to.getX());
+        int dy = Math.abs(this.getY() - to.getY());
+        hCost = AStar.getDefCost() * (dx + dy) + (AStar.getDiagCost() - 2 * AStar.getDefCost()) * Math.min(dx, dy);
+        hCost *= AStar.gethCostWeight();
+        //hCost = (int) Math.sqrt(Math.pow(pos.getX() - to.getX(), 2) + Math.pow(pos.getY() - to.getY(), 2)) * 10;
     }
 
     /**

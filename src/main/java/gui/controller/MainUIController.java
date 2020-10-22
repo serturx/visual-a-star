@@ -7,8 +7,8 @@ import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import model.AstarNode;
+import model.NodeType;
 import model.Vector2;
 import util.AStar;
 
@@ -16,17 +16,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
-//TODO allow rectangle
-//TODO enable/disable diagonal
+//TODO allow rectangle grid
 //TODO set icon
 //TODO multithread grid render
-//TODO fix drag start/dest over block
+
 
 public class MainUIController {
     final private int DEFAULT_GRID_SIZE = 30;
@@ -45,25 +41,28 @@ public class MainUIController {
     private CheckBox chkboxShowCosts;
     @FXML
     private Spinner spnrGridSize;
+    @FXML
+    private CheckBox chkboxAllowDiagonals;
 
     //need to reduce memory usage, takes god damn 2GB when gridsize is 100
     //probably need to use tableview or something idk
     private int gridSize;
     private GridPane astarGridPane;
     private boolean astarRunning;
-    private boolean setStart;
-    private boolean setDestination;
-    private boolean setBlock;
+    private boolean settingStart;
+    private boolean settingDestination;
+    private boolean settingBlock;
     private Thread astarThread;
     private boolean astarThreadSleeping;
     private CountDownLatch astarWaitForPlay;
-
+    private boolean startSet;
+    private boolean destinationSet;
 
     public MainUIController() {
         this.gridSize = DEFAULT_GRID_SIZE;
-        this.setBlock = false;
-        this.setStart = false;
-        this.setDestination = false;
+        this.settingBlock = false;
+        this.settingStart = false;
+        this.settingDestination = false;
     }
 
     @FXML
@@ -137,8 +136,10 @@ public class MainUIController {
     }
 
     private List<NodeUI> createGridNodes(int amount) {
-        final List<NodeUI> syncList = Collections.synchronizedList(new ArrayList<>(amount));
+
         ExecutorService threadPool = Executors.newFixedThreadPool(20);
+
+        final List<NodeUI> syncList = Collections.synchronizedList(new ArrayList<>(amount));
 
         for (int i = 0; i < amount; i++) {
             if (i % gridSize == 0) System.out.printf("Setting up: Row %d\n", i / gridSize);
@@ -163,16 +164,16 @@ public class MainUIController {
     public void updateAstarGrid() {
         Platform.runLater(() -> {
             astar.getOpenList().forEach(n -> {
-                NodeUIController nodeUI = getNodeUI(n.getPos()).getUiController();
 
+                NodeUIController nodeUI = getNodeUI(n.getPos()).getUiController();
                 if (!n.getPos().equals(astar.getTo().getPos()) && !n.getPos().equals(astar.getFrom().getPos())) {
                     nodeUI.setNodeOpen();
                     nodeUI.setFCost(String.valueOf(n.getFCost()));
                     nodeUI.setGCost(String.valueOf(n.getGCost()));
                     nodeUI.setHCost(String.valueOf(n.getHCost()));
                 }
-            });
 
+            });
 
             new HashSet<>(astar.getClosedSet()).forEach(n -> {
 
@@ -185,11 +186,10 @@ public class MainUIController {
                 }
             });
         });
-
     }
 
     /**
-     * Updates the UI Grid based on the astar Grid //TODO Optimize
+     * Updates the UI Grid based on the astar Grid
      */
 
     public void updateAstarGridPath() {
@@ -210,9 +210,6 @@ public class MainUIController {
                 getNodeUI(astar.getTo().getPos()).getUiController().setAsDestination();
             });
         }).start();
-
-
-
     }
 
     public void setNode(AstarNode node) {
@@ -230,7 +227,7 @@ public class MainUIController {
      * @param node  node to set
      * @param block whether to set a block
      */
-    public void setBlockUI(NodeUI node, boolean block) {
+    public void setBlock(NodeUI node, boolean block) {
         try {
             astar.setBlock(new Vector2(GridPane.getColumnIndex(node), GridPane.getRowIndex(node)), block);
         } catch (Exception ignored) {}
@@ -239,7 +236,8 @@ public class MainUIController {
 
     @FXML
     private void onCalcPath() {
-        if (astarRunning) return;
+        if (astarRunning || !startSet || !destinationSet) return;
+        astar.setAllowDiagonal(chkboxAllowDiagonals.isSelected());
         astarThreadSleeping = false;
         astarRunning = true;
         astarThread = new Thread(astar::calcPath);
@@ -249,23 +247,25 @@ public class MainUIController {
 
     @FXML
     private void onSetDestination() {
-        setDestination = !setDestination;
-        setStart = false;
-        setBlock = false;
+        destinationSet = true;
+        settingDestination = !settingDestination;
+        settingStart = false;
+        settingBlock = false;
     }
 
     @FXML
     private void onSetStart() {
-        setStart = !setStart;
-        setDestination = false;
-        setBlock = false;
+        destinationSet = true;
+        settingStart = !settingStart;
+        settingDestination = false;
+        settingBlock = false;
     }
 
     @FXML
     public void onSetBlock() {
-        setBlock = !setBlock;
-        setStart = false;
-        setDestination = false;
+        settingBlock = !settingBlock;
+        settingStart = false;
+        settingDestination = false;
     }
 
     @FXML
@@ -287,6 +287,8 @@ public class MainUIController {
     @FXML
     public void onReset() {
         if (!astar.getClosedSet().isEmpty()) {
+            destinationSet = false;
+            startSet = false;
             astarThread = null;
             astarRunning = false;
             astarThreadSleeping = false;
@@ -294,7 +296,7 @@ public class MainUIController {
 
             astarGridPane.getChildren().forEach((node -> {
                 NodeUI nodeUI = (NodeUI) node;
-                nodeUI.getUiController().removeBlockNode();
+                nodeUI.getUiController().removeBlock();
             }));
 
             astarGridPane.getChildren().forEach(n -> {
@@ -328,6 +330,19 @@ public class MainUIController {
         setGridSize((Integer) spnrGridSize.getValue());
     }
 
+    @FXML
+    public void onClearBlocks() {
+        if(isAstarRunning()) return;
+
+        astarGridPane.getChildren().forEach(n -> {
+            NodeUI nodeUI = (NodeUI) n;
+            if(nodeUI.getUiController().getNodeType() == NodeType.BLOCK) {
+                nodeUI.getUiController().removeBlock();
+            }
+        });
+
+    }
+
     public boolean isAstarRunning() {
         return astarRunning;
     }
@@ -336,24 +351,24 @@ public class MainUIController {
         this.astarRunning = astarRunning;
     }
 
-    public boolean isSetBlocks() {
-        return setBlock;
+    public boolean settingBlocks() {
+        return settingBlock;
     }
 
-    public boolean isSetStart() {
-        return setStart;
+    public boolean settingStart() {
+        return settingStart;
     }
 
-    public void setSetStart(boolean setStart) {
-        this.setStart = setStart;
+    public void setSettingStart(boolean settingStart) {
+        this.settingStart = settingStart;
     }
 
-    public boolean isSetDestination() {
-        return setDestination;
+    public boolean settingDestination() {
+        return settingDestination;
     }
 
-    public void setSetDestination(boolean setDestination) {
-        this.setDestination = setDestination;
+    public void setSettingDestination(boolean settingDestination) {
+        this.settingDestination = settingDestination;
     }
 
     public AStar getAstar() {
@@ -384,7 +399,19 @@ public class MainUIController {
         this.astarRunning = false;
     }
 
+    public boolean isStartSet() {
+        return startSet;
+    }
 
+    public void setStartSet(boolean startSet) {
+        this.startSet = startSet;
+    }
 
+    public boolean isDestinationSet() {
+        return destinationSet;
+    }
 
+    public void setDestinationSet(boolean destinationSet) {
+        this.destinationSet = destinationSet;
+    }
 }

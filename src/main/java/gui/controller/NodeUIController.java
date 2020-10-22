@@ -11,6 +11,8 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
+import model.AstarNode;
+import model.NodeType;
 import model.Vector2;
 
 public class NodeUIController {
@@ -26,7 +28,15 @@ public class NodeUIController {
 
     private NodeUI root;
 
-    final private Color DEF_COLOR = Color.rgb(112, 111, 211);
+    private NodeType nodeType = NodeType.EMPTY;
+
+    final private Color EMPTY_COLOR = Color.rgb(112, 111, 211);
+    final private Color START_COLOR = Color.rgb(46, 204, 113);
+    final private Color DESTINATION_COLOR = Color.rgb(231, 76, 60);
+    final private Color OPEN_COLOR = Color.rgb(82, 82, 160);
+    final private Color CLOSED_COLOR = Color.rgb(44, 44, 84);
+    final private Color BLOCK_COLOR = Color.rgb(52, 73, 94);
+    final private Color PATH_COLOR = Color.rgb(9, 132, 227);
 
     @FXML
     public void initialize() {
@@ -34,16 +44,18 @@ public class NodeUIController {
         setHCost("");
         setFCost("");
         showCosts(false);
-        container.setStyle("-fx-border-color: rgba(99, 110, 114, 0.2);");
-        setColor(DEF_COLOR);
+        container.setStyle("-fx-border-color: rgba(99, 110, 114, 0.1); -fx-text-fill: antiquewhite");
+        setColor(EMPTY_COLOR);
     }
 
     public void setNodeClosed() {
-        setColor(Color.rgb(44, 44, 84));
+        nodeType = NodeType.CLOSED;
+        setColor(CLOSED_COLOR);
     }
 
     public void setNodeOpen() {
-        setColor(Color.rgb(82, 82, 160));
+        nodeType = NodeType.OPEN;
+        setColor(OPEN_COLOR);
     }
 
     public void showCosts(boolean show) {
@@ -62,24 +74,25 @@ public class NodeUIController {
     public void onClick(MouseEvent e) {
 
         if(!root.getMainUIController().isAstarRunning()) {
-            if (root.getMainUIController().isSetStart()) {
+            if (root.getMainUIController().settingStart()) {
 
                 setAsStart();
 
-            } else if (root.getMainUIController().isSetDestination()) {
+            } else if (root.getMainUIController().settingDestination()) {
 
                 setAsDestination();
 
-            } else if (root.getMainUIController().isSetBlocks()) {
+            } else if (root.getMainUIController().settingBlocks()) {
                 if (e.getButton() == MouseButton.PRIMARY) {
 
-                    setBlockNode();
+                    setAsBlock();
 
                 } else if (e.getButton() == MouseButton.SECONDARY) {
 
-                    removeBlockNode();
+                    removeBlock();
                 }
             } else {
+
             /*Stage stage = new Stage();
             stage.initModality(Modality.WINDOW_MODAL);
 
@@ -92,35 +105,38 @@ public class NodeUIController {
             stage.show();*/
             }
         }
-
-
-
-
     }
 
     public void setAsStart() {
-        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getFrom().getPos()).getUiController().setColor(DEF_COLOR);
+        nodeType = NodeType.START;
+        removeBlock();
+        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getFrom().getPos()).getUiController().setColor(EMPTY_COLOR);
         root.getMainUIController().getAstar().setFrom(getPos());
-        setColor(Color.rgb(46, 204, 113));
+        root.getMainUIController().setStartSet(true);
+        setColor(START_COLOR);
     }
 
     public void setAsDestination() {
-        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getTo().getPos()).getUiController().setColor(DEF_COLOR);
+        nodeType = NodeType.DESTINATION;
+        removeBlock();
+        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getTo().getPos()).getUiController().setColor(EMPTY_COLOR);
         root.getMainUIController().getAstar().setTo(getPos());
-        setColor(Color.rgb(231, 76, 60));
+        setColor(DESTINATION_COLOR);
+        root.getMainUIController().setDestinationSet(true);
     }
 
-    public void removeBlockNode() {
-        root.getMainUIController().setBlockUI(root, false);
-        setColor(DEF_COLOR);
+    public void removeBlock() {
+        root.getMainUIController().setBlock(root, false);
+        setColor(EMPTY_COLOR);
     }
 
 
-    public void setBlockNode() {
+    public void setAsBlock() {
+        nodeType = NodeType.BLOCK;
         if (!root.getMainUIController().getAstar().getFrom().getPos().equals(getPos()) &&
                 !root.getMainUIController().getAstar().getTo().getPos().equals(getPos())) {
-            root.getMainUIController().setBlockUI(root, true);
-            setColor(Color.rgb(52, 73, 94));
+            root.getMainUIController().setBlock(root, true);
+            setColor(BLOCK_COLOR);
         }
 
     }
@@ -130,7 +146,8 @@ public class NodeUIController {
     }
 
     public void setPath() {
-        setColor(Color.rgb(9, 132, 227));
+        nodeType = NodeType.PATH;
+        setColor(PATH_COLOR);
     }
 
     public void setColor(Color fill) {
@@ -160,7 +177,12 @@ public class NodeUIController {
         lblFCost.setText(value);
     }
 
-    public Color getDEF_COLOR() {
-        return DEF_COLOR;
+    public Color getEMPTY_COLOR() {
+        return EMPTY_COLOR;
     }
+
+    public NodeType getNodeType() {
+        return this.nodeType;
+    }
+
 }

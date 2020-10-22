@@ -27,6 +27,8 @@ public class AStar {
      * Default horizontal and vertical move cost
      */
     private static final int DEF_COST = 10;
+
+    private static final double H_COST_WEIGHT = 1.01;
     /**
      * List with all found nodes, the one with the lowest f cost is at the top
      */
@@ -64,6 +66,8 @@ public class AStar {
      */
     private ArrayList<String> steps;
 
+    private boolean allowDiagonal = true;
+
     private final MainUIController uiController;
 
     private CountDownLatch waiting;
@@ -96,14 +100,7 @@ public class AStar {
         this.to = grid[to.getY()][to.getX()];
         this.path = new ArrayList<>();
         this.openList =
-                new PriorityBlockingQueue<>(1, (o1, o2) -> {
-                    if(o1.getFCost() == o2.getFCost()) {
-                        return  o1.getHCost() - o2.getHCost();
-                    }
-
-                    return o1.getFCost() - o2.getFCost();
-        });
-
+                new PriorityBlockingQueue<>(1, Comparator.comparingInt(AstarNode::getFCost));
         this.closedSet = ConcurrentHashMap.newKeySet();
         this.trackSteps = false;
         this.totalCost = Integer.MAX_VALUE;
@@ -197,22 +194,30 @@ public class AStar {
         int currentX = current.getX();
         int currentY = current.getY();
 
-        // go through all neighbouring nodes
-        for (int i = currentY - 1; i <= currentY + 1; i++) {
-            if (i < 0 || i >= grid.length) {
-                continue;
-            }
-
-            for (int j = currentX - 1; j <= currentX + 1; j++) {
-                if (j < 0 || j >= grid.length) {
+        if(allowDiagonal) {
+            for (int i = currentY - 1; i <= currentY + 1; i++) {
+                if (i < 0 || i >= grid.length) {
                     continue;
                 }
 
-                if (!(currentX == j && currentY == i)) {
-                    addNeighbourNode(
-                            current, grid[i][j], isDiagonal(current, grid[i][j]) ? DIAG_COST : DEF_COST);
+                for (int j = currentX - 1; j <= currentX + 1; j++) {
+                    if (j < 0 || j >= grid.length) {
+                        continue;
+                    }
+
+                    if (!(currentX == j && currentY == i)) {
+                        addNeighbourNode(
+                                current, grid[i][j], isDiagonal(current, grid[i][j]) ? DIAG_COST : DEF_COST);
+                    }
                 }
             }
+        } else {
+
+            if(isInBounds(currentX + 1, currentY)) addNeighbourNode(current, grid[currentY][currentX + 1], DEF_COST);
+            if(isInBounds(currentX - 1, currentY)) addNeighbourNode(current, grid[currentY][currentX - 1], DEF_COST);
+            if(isInBounds(currentX, currentY + 1)) addNeighbourNode(current, grid[currentY + 1][currentX], DEF_COST);
+            if(isInBounds(currentX, currentY - 1)) addNeighbourNode(current, grid[currentY - 1][currentX], DEF_COST);
+
         }
     }
 
@@ -302,7 +307,7 @@ public class AStar {
      * @param v coordinate of the block to set
      */
     public void setBlock(Vector2 v, boolean block) {
-        if ((v.getX() == from.getX() && v.getY() == from.getY()) || (v.getX() == to.getX() && v.getY() == to.getY())) {
+        if (block && ((v.getX() == from.getX() && v.getY() == from.getY()) || (v.getX() == to.getX() && v.getY() == to.getY()))) {
             throw new IllegalArgumentException("Node to set as block is either the start or destination node");
         } else {
             if (v.getX() >= grid.length || v.getY() >= grid.length) {
@@ -361,6 +366,10 @@ public class AStar {
                 }
             }
         }
+    }
+
+    private boolean isInBounds(int x, int y) {
+        return (x > 0 && x < grid[0].length && y > 0 && y < grid.length);
     }
 
     /**
@@ -478,5 +487,25 @@ public class AStar {
 
     public void setWaiting(CountDownLatch waiting) {
         this.waiting = waiting;
+    }
+
+    public static int getDiagCost() {
+        return DIAG_COST;
+    }
+
+    public static int getDefCost() {
+        return DEF_COST;
+    }
+
+    public static double gethCostWeight() {
+        return H_COST_WEIGHT;
+    }
+
+    public boolean getAllowDiagonal() {
+        return allowDiagonal;
+    }
+
+    public void setAllowDiagonal(boolean allowDiagonal) {
+        this.allowDiagonal = allowDiagonal;
     }
 }
