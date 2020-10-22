@@ -45,6 +45,7 @@ public class AStar {
      * List containing the best path after it has been calculated
      */
     private final ArrayList<AstarNode> path;
+    private final MainUIController uiController;
     /**
      * Starting node
      */
@@ -65,11 +66,7 @@ public class AStar {
      * Contains all algorithm steps
      */
     private ArrayList<String> steps;
-
     private boolean allowDiagonal = true;
-
-    private final MainUIController uiController;
-
     private CountDownLatch waiting;
 
     /**
@@ -122,6 +119,18 @@ public class AStar {
         this.steps = new ArrayList<>();
     }
 
+    public static int getDiagCost() {
+        return DIAG_COST;
+    }
+
+    public static int getDefCost() {
+        return DEF_COST;
+    }
+
+    public static double gethCostWeight() {
+        return H_COST_WEIGHT;
+    }
+
     /**
      * Calculates the shortest path between the two given nodes
      */
@@ -167,7 +176,7 @@ public class AStar {
 
                 uiController.updateAstarGrid();
 
-                if(waiting != null) {
+                if (waiting != null) {
                     try {
                         waiting.await();
                     } catch (InterruptedException e) {
@@ -180,7 +189,7 @@ public class AStar {
         if (found) {
             setFinalPathStatus();
             uiController.updateAstarGridPath();
-        } else if(uiController.isAstarRunning()){
+        } else if (uiController.isAstarRunning()) {
             System.out.println("\n No Path Found!");
         }
     }
@@ -194,7 +203,7 @@ public class AStar {
         int currentX = current.getX();
         int currentY = current.getY();
 
-        if(allowDiagonal) {
+        if (allowDiagonal) {
             for (int i = currentY - 1; i <= currentY + 1; i++) {
                 if (i < 0 || i >= grid.length) {
                     continue;
@@ -213,10 +222,10 @@ public class AStar {
             }
         } else {
 
-            if(isInBounds(currentX + 1, currentY)) addNeighbourNode(current, grid[currentY][currentX + 1], DEF_COST);
-            if(isInBounds(currentX - 1, currentY)) addNeighbourNode(current, grid[currentY][currentX - 1], DEF_COST);
-            if(isInBounds(currentX, currentY + 1)) addNeighbourNode(current, grid[currentY + 1][currentX], DEF_COST);
-            if(isInBounds(currentX, currentY - 1)) addNeighbourNode(current, grid[currentY - 1][currentX], DEF_COST);
+            if (isInBounds(currentX + 1, currentY)) addNeighbourNode(current, grid[currentY][currentX + 1], DEF_COST);
+            if (isInBounds(currentX - 1, currentY)) addNeighbourNode(current, grid[currentY][currentX - 1], DEF_COST);
+            if (isInBounds(currentX, currentY + 1)) addNeighbourNode(current, grid[currentY + 1][currentX], DEF_COST);
+            if (isInBounds(currentX, currentY - 1)) addNeighbourNode(current, grid[currentY - 1][currentX], DEF_COST);
 
         }
     }
@@ -256,7 +265,6 @@ public class AStar {
         }
     }
 
-
     /**
      * Checks whether the neighbouring node is diagonal relative to the other node
      *
@@ -292,7 +300,7 @@ public class AStar {
 
         setStartDestStatus();
 
-        if(trackSteps) steps.add(this.toString());
+        if (trackSteps) steps.add(this.toString());
 
     }
 
@@ -487,18 +495,6 @@ public class AStar {
 
     public void setWaiting(CountDownLatch waiting) {
         this.waiting = waiting;
-    }
-
-    public static int getDiagCost() {
-        return DIAG_COST;
-    }
-
-    public static int getDefCost() {
-        return DEF_COST;
-    }
-
-    public static double gethCostWeight() {
-        return H_COST_WEIGHT;
     }
 
     public boolean getAllowDiagonal() {
