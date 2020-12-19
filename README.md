@@ -6,6 +6,8 @@ A simple visualization of the A* Algorithm in Java/JavaFX
 * Adjustable grid size
 * Enable/Disable diagonal traversal
 * Adjustable algorithm execution speed
+* Gradient node coloring
+* Maze Generator
 
 # Prerequisites
 
@@ -20,8 +22,3 @@ A simple visualization of the A* Algorithm in Java/JavaFX
 * Adjust the update rate (also adjustable while the algorithm is running)
 * (Optional) Enable/Disable diagonal traversal
 * Calculate Path
-
-# TODO
-1. Different color themes
-2. Gradient color nodes
-
