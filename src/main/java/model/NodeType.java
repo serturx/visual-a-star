@@ -7,5 +7,6 @@ public enum NodeType {
     DESTINATION,
     PATH,
     OPEN,
-    CLOSED
+    CLOSED,
+    FAILED
 }

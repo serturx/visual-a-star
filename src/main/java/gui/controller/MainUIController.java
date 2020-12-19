@@ -1,6 +1,6 @@
 package gui.controller;
 
-import gui.java.NodeUI;
+import gui.uiparts.NodeUI;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
@@ -10,6 +10,7 @@ import javafx.scene.layout.*;
 import model.NodeType;
 import model.Vector2;
 import util.AStar;
+import util.MazeGenerator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,6 +22,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 //TODO more styling
+//TODO add different theme with color transition based on h cost
+//TODO detailed update rate
+//TODO spinner direct input
 
 public class MainUIController {
     final private int DEF_GRID_HEIGHT = 90;
@@ -42,6 +46,8 @@ public class MainUIController {
     private Spinner spnrGridHeight;
     @FXML
     private CheckBox chkboxAllowDiagonals;
+    @FXML
+    private CheckBox chkboxGradientColor;
 
     private int gridWidth;
     private int gridHeight;
@@ -76,7 +82,7 @@ public class MainUIController {
     }
 
     public void setGridSize(int height, int width) {
-        this.astar = new AStar(height, width, new Vector2(0, 0), new Vector2(1, 1), this);
+        this.astar = new AStar(height, width, null, null, this);
         //remove the gridpane only to re-render it with the correct size
         rootPane.getChildren().removeIf(n -> n instanceof GridPane);
         gridWidth = width;
@@ -175,20 +181,38 @@ public class MainUIController {
 
             });
 
-            new HashSet<>(astar.getClosedSet()).forEach(n -> {
+            new HashSet<>(astar.getClosedSetUpdate()).forEach(n -> {
 
                 if (!n.getPos().equals(astar.getTo().getPos()) && !n.getPos().equals(astar.getFrom().getPos())) {
                     NodeUIController nodeUI = getNodeUI(n.getPos()).getUiController();
-                    nodeUI.setNodeClosed();
+                    if(chkboxGradientColor.isSelected()) {
+                        nodeUI.updateColorGradient(astar.getFrom().getPos(), astar.getTo().getPos());
+                    } else {
+                        nodeUI.setNodeClosed();
+                    }
+
+                    astar.getClosedSetUpdate().remove(n);
                 }
+
+
             });
         });
+    }
+
+    public void updateAstarGridFailed() {
+        Platform.runLater((() -> {
+            astar.getClosedSet().forEach(n -> {
+                if (!n.getPos().equals(astar.getTo().getPos()) && !n.getPos().equals(astar.getFrom().getPos())) {
+                    NodeUIController nodeUI = getNodeUI(n.getPos()).getUiController();
+                    nodeUI.setNodeFailed();
+                }
+            });
+        }));
     }
 
     /**
      * Updates the UI Grid based on the astar Grid
      */
-
     public void updateAstarGridPath() {
         new Thread(() -> {
             astar.getPath().forEach(n -> {
@@ -218,9 +242,7 @@ public class MainUIController {
     public void setBlock(NodeUI node, boolean block) {
         try {
             astar.setBlock(new Vector2(GridPane.getColumnIndex(node), GridPane.getRowIndex(node)), block);
-        } catch (Exception ignored) {
-        }
-
+        } catch (Exception ignored) {   }
     }
 
     @FXML
@@ -273,13 +295,13 @@ public class MainUIController {
 
     @FXML
     public void onReset() {
-        if (!astar.getClosedSet().isEmpty()) {
+        if (true) { //if !astar.getClosedSet().isEmpty()
             destinationSet = false;
             startSet = false;
             astarThread = null;
             astarRunning = false;
             astarThreadSleeping = false;
-            this.astar = new AStar(gridHeight, gridWidth, new Vector2(0, 0), new Vector2(1, 1), this);
+            this.astar = new AStar(gridHeight, gridWidth, null, null, this);
 
             astarGridPane.getChildren().forEach((node -> {
                 NodeUI nodeUI = (NodeUI) node;
@@ -319,6 +341,21 @@ public class MainUIController {
             }
         });
 
+    }
+
+    @FXML
+    public void onGenerateMaze() {
+        onReset();
+        MazeGenerator mg = new MazeGenerator(new Vector2(gridWidth, gridHeight));
+        boolean[][] maze = mg.generate();
+
+        for(int i = 0; i < maze.length; i++) {
+            for(int j = 0; j < maze[i].length; j++) {
+                if(maze[i][j]) {
+                    getNodeUI(new Vector2(j, i)).getUiController().setAsBlock();
+                }
+            }
+        }
     }
 
     public boolean isAstarRunning() {

@@ -1,4 +1,4 @@
-import gui.java.MainUI;
+import gui.uiparts.MainUI;
 
 public class Main {
     public static void main(String[] args) {

@@ -1,0 +1,40 @@
+.button{
+    /*-fx-background-color: #3b76d4;*/
+    -fx-background-radius: 23px;
+    -fx-border-radius: 15px;
+    -fx-border-width: 3px;
+    /*-fx-text-fill: antiquewhite;*/
+}
+
+.tool-bar{
+    /*-fx-background-color: #504fba;*/
+}
+
+.toggle-button{
+    /*-fx-background-color: #3b76d4;*/
+    -fx-background-radius: 23px;
+    -fx-border-radius: 15px;
+    -fx-border-width: 3px;
+    /*-fx-text-fill: antiquewhite;*/
+}
+
+.slider .track {
+    -fx-control-inner-background: palegreen;
+}
+
+.label{
+    /*-fx-text-fill: antiquewhite;*/
+}
+
+.button:pressed{
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.6), 10, 0.1, 0, 0) !important;
+}
+
+.toggle-button:selected{
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.6), 10, 0.1, 0, 0) !important;
+}
+
+.toggle-button:pressed{
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.6), 10, 0.1, 0, 0) !important;
+}
+

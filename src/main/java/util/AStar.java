@@ -37,6 +37,7 @@ public class AStar {
      * All closed nodes (closed meaning all it's neighbours have been added)
      */
     private final Set<AstarNode> closedSet;
+    private final Set<AstarNode> closedSetUpdate;
     /**
      * Quadratic Grid containing all nodes
      */
@@ -94,12 +95,16 @@ public class AStar {
         }
 
         // Sets the rest of the members up
-        this.from = grid[from.getY()][from.getX()];
-        this.to = grid[to.getY()][to.getX()];
+
+        if(to != null && from != null) {
+            this.to = grid[to.getY()][to.getX()];
+            this.from = grid[from.getY()][from.getX()];
+        }
         this.path = new ArrayList<>();
         this.openList =
-                new PriorityBlockingQueue<>(1, Comparator.comparingInt(AstarNode::getFCost));
+                new PriorityBlockingQueue<>(1, Comparator.comparingInt(AstarNode::getFCost).thenComparingInt(AstarNode::getHCost));
         this.closedSet = ConcurrentHashMap.newKeySet();
+        this.closedSetUpdate = ConcurrentHashMap.newKeySet();
         this.trackSteps = false;
         this.totalCost = Integer.MAX_VALUE;
         this.uiController = uiController;
@@ -155,6 +160,9 @@ public class AStar {
             // takes the node with the lower f Cost
             AstarNode current = openList.poll();
             closedSet.add(current);
+            closedSetUpdate.add(current);
+
+
 
             if (current == null) {
                 throw new NullPointerException("Fatal Error: Null pointer on current node");
@@ -194,6 +202,7 @@ public class AStar {
             uiController.updateAstarGridPath();
         } else if (uiController.isAstarRunning()) {
             System.out.println("\n No Path Found!");
+            uiController.updateAstarGridFailed();
         }
     }
 
@@ -308,8 +317,10 @@ public class AStar {
     }
 
     public void setStartDestStatus() {
-        grid[to.getY()][to.getX()].setStatus("FI");
-        grid[from.getY()][from.getX()].setStatus("ST");
+        if(to != null)
+            grid[to.getY()][to.getX()].setStatus("FI");
+        if(from != null)
+            grid[from.getY()][from.getX()].setStatus("ST");
     }
 
     /**
@@ -318,10 +329,12 @@ public class AStar {
      * @param v coordinate of the block to set
      */
     public void setBlock(Vector2 v, boolean block) {
-        if (block && ((v.getX() == from.getX() && v.getY() == from.getY()) || (v.getX() == to.getX() && v.getY() == to.getY()))) {
+        if (block &&
+                (from != null && (v.getX() == from.getX() && v.getY() == from.getY()) ||
+                (to != null && v.getX() == to.getX() && v.getY() == to.getY()))) {
             throw new IllegalArgumentException("Node to set as block is either the start or destination node");
         } else {
-            if (v.getX() >= grid.length || v.getY() >= grid.length) {
+            if (v.getX() >= grid[0].length || v.getY() >= grid.length) {
                 throw new IllegalArgumentException("Node to set as block is out of bounds");
             }
         }
@@ -369,7 +382,7 @@ public class AStar {
         for (int i = 0; i < input.length; i++) {
             for (int j = 0; j < input[0].length; j++) {
                 if (input[i][j]) {
-                    setBlock(new Vector2(j, i), false);
+                    setBlock(new Vector2(j, i), true);
                 }
             }
         }
@@ -441,7 +454,8 @@ public class AStar {
     }
 
     public void setFrom(Vector2 v) {
-        this.from.setStatus("  ");
+        if(from != null)
+            this.from.setStatus("  ");
         this.from = grid[v.getY()][v.getX()];
         setStartDestStatus();
     }
@@ -455,7 +469,8 @@ public class AStar {
     }
 
     public void setTo(Vector2 v) {
-        this.to.setStatus("  ");
+        if(to != null)
+            this.to.setStatus("  ");
         this.to = grid[v.getY()][v.getX()];
         setStartDestStatus();
     }
@@ -502,5 +517,9 @@ public class AStar {
 
     public void setAllowDiagonal(boolean allowDiagonal) {
         this.allowDiagonal = allowDiagonal;
+    }
+
+    public Set<AstarNode> getClosedSetUpdate() {
+        return closedSetUpdate;
     }
 }

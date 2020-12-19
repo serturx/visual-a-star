@@ -1,4 +1,4 @@
-package gui.java;
+package gui.uiparts;
 
 import gui.controller.MainUIController;
 import gui.controller.NodeUIController;

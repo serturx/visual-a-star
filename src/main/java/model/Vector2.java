@@ -47,8 +47,13 @@ public class Vector2 {
 
     @Override
     public boolean equals(Object obj) {
+        if(!(obj instanceof Vector2)) return false;
         Vector2 oV = (Vector2) obj;
         return this.x == oV.getX() && this.y == oV.getY();
+    }
+
+    public double distance(Vector2 v) {
+        return Math.sqrt(Math.pow(this.x - v.getX(), 2) + Math.pow(this.y - v.getY(), 2));
     }
 
     public int getX() {

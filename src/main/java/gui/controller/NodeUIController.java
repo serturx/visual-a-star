@@ -1,6 +1,6 @@
 package gui.controller;
 
-import gui.java.NodeUI;
+import gui.uiparts.NodeUI;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.scene.input.MouseButton;
@@ -19,6 +19,7 @@ public class NodeUIController {
     final private Color CLOSED_COLOR = Color.rgb(44, 44, 84);
     final private Color BLOCK_COLOR = Color.rgb(52, 73, 94);
     final private Color PATH_COLOR = Color.rgb(9, 132, 227);
+    final private Color FAILED_COLOR = Color.rgb(255, 30, 60);
 
     @FXML
     private Pane container;
@@ -42,6 +43,10 @@ public class NodeUIController {
         setColor(OPEN_COLOR);
     }
 
+    public void setNodeFailed() {
+        nodeType = NodeType.FAILED;
+        setColor(FAILED_COLOR);
+    }
 
     @FXML
     public void onClick(MouseEvent e) {
@@ -83,7 +88,8 @@ public class NodeUIController {
     public void setAsStart() {
         nodeType = NodeType.START;
         removeBlock();
-        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getFrom().getPos()).getUiController().setColor(EMPTY_COLOR);
+        if(root.getMainUIController().getAstar().getFrom() != null)
+            root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getFrom().getPos()).getUiController().setColor(EMPTY_COLOR);
         root.getMainUIController().getAstar().setFrom(getPos());
         root.getMainUIController().setStartSet(true);
         setColor(START_COLOR);
@@ -92,7 +98,8 @@ public class NodeUIController {
     public void setAsDestination() {
         nodeType = NodeType.DESTINATION;
         removeBlock();
-        root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getTo().getPos()).getUiController().setColor(EMPTY_COLOR);
+        if(root.getMainUIController().getAstar().getTo() != null)
+            root.getMainUIController().getNodeUI(root.getMainUIController().getAstar().getTo().getPos()).getUiController().setColor(EMPTY_COLOR);
         root.getMainUIController().getAstar().setTo(getPos());
         setColor(DESTINATION_COLOR);
         root.getMainUIController().setDestinationSet(true);
@@ -118,12 +125,14 @@ public class NodeUIController {
 
     public void setAsBlock() {
         nodeType = NodeType.BLOCK;
-        if (!root.getMainUIController().getAstar().getFrom().getPos().equals(getPos()) &&
-                !root.getMainUIController().getAstar().getTo().getPos().equals(getPos())) {
-            root.getMainUIController().setBlock(root, true);
-            setColor(BLOCK_COLOR);
-        }
+        root.getMainUIController().setBlock(root, true);
+        setColor(BLOCK_COLOR);
+    }
 
+    public void updateColorGradient(Vector2 start, Vector2 dest) {
+        double percent = this.getPos().distance(dest) / start.distance(dest);
+        Color c = START_COLOR.interpolate(DESTINATION_COLOR, percent);
+        setColor(c);
     }
 
     public Vector2 getPos() {
